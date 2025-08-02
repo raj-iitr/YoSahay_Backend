@@ -1,33 +1,31 @@
+#This code is part of a FastAPI application that handles incoming WhatsApp messages.
+# It detects the language of the message and returns the phone number, message text, and detected language.
+
+# Necessary imports
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from app.detector import detect_lang
 
-
 app = FastAPI()
 
+#Created a health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
+#Created a webhook endpoint to handle incoming WhatsApp messages
+# It extracts the phone number and message text, detects the language, and returns the information.
 @app.post("/whatsapp-webhook")
 async def whatsapp_webhook(request: Request):
-    try:
-        payload = await request.json()
-        message = payload.get("messages", [{}])[0]
+    body = await request.json()
+    message_data = body.get("messages", [{}])[0]
 
-        user_phone = message.get("from", "unknown")
-        user_text = message.get("text", {}).get("body", "").strip()
-        lang = detect_lang(user_text)
+    user_phone = message_data.get("from")
+    user_text = message_data.get("text", {}).get("body", "").strip()
 
-        if not user_text:
-            raise HTTPException(status_code=400, detail="Missing message text")
+    print(f"📱 Phone: {user_phone}")
+    print(f"📝 Text: {repr(user_text)}")  # use repr() to debug encoding
+    lang = detect_lang(user_text)
+    print(f"🌐 Detected Language: {lang}")
 
-        print(f"✅ Simulated Incoming Message")
-        print(f"📱 Phone: {user_phone}")
-        print(f"📝 Text: {user_text}")
-        print(f"🌐 Detected Language: {lang}")
-
-        return JSONResponse(content={"phone": user_phone, "message": user_text, "lang": lang},media_type="application/json; charset=utf-8")
-    
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+    return JSONResponse(content={"phone": user_phone, "message": user_text, "lang": lang})
