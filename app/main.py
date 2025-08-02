@@ -5,8 +5,13 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from app.detector import detect_lang
+from dotenv import load_dotenv
+
+
 
 app = FastAPI()
+
+load_dotenv()
 
 #Created a health check endpoint
 @app.get("/health")
