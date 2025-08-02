@@ -1,26 +1,19 @@
-#This code is part of a FastAPI application that interacts with ChromaDB to manage scheme chunks.
-# It provides functions to add scheme chunks and search for them based on language and embeddings.
+# app/db.py
 
-# Necessary imports
+import os
 import chromadb
-from chromadb.config import Settings
 
-# Created a ChromaDB client with in-memory storage
-# This is useful for testing or when persistent storage is not required.
-chroma_client = chromadb.Client(Settings(
-    chroma_db_impl="duckdb+parquet",
-    persist_directory=None  # in-memory
-))
+# Render requires persistent storage under /persistent
+persist_dir = os.getenv("CHROMA_DIR", "/persistent/chroma_data")
 
-# Created a collection for schemes
-# This collection will store scheme chunks with their embeddings and metadata.
+chroma_client = chromadb.PersistentClient(path=persist_dir)
+
 collection = chroma_client.get_or_create_collection(
-    name="schemes",
-    metadata={"hnsw:space": "cosine"}
+    name="schemes"
 )
 
-# Function to add a scheme chunk to the collection
-# It takes an ID, text, embedding, scheme ID, and language as parameters.
+print("ChromaDB client initialized and collection is ready.")
+
 def add_scheme_chunk(id: str, text: str, embedding: list[float], scheme_id: str, lang: str):
     collection.add(
         ids=[id],
@@ -32,8 +25,6 @@ def add_scheme_chunk(id: str, text: str, embedding: list[float], scheme_id: str,
         }]
     )
 
-# Function to search for scheme chunks based on a query embedding and language
-# It returns the top K results that match the query embedding and language.
 def search_chunks(query_embedding: list[float], lang: str, top_k=3):
     results = collection.query(
         query_embeddings=[query_embedding],
@@ -41,3 +32,5 @@ def search_chunks(query_embedding: list[float], lang: str, top_k=3):
         where={"lang": lang}
     )
     return results
+
+
